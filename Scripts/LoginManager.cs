@@ -1,11 +1,12 @@
-using System.Collections;
+using System.Collections; // Required for IEnumerator
 using UnityEngine;
-using UnityEngine.Networking;
+using UnityEngine.Networking; // Required for UnityWebRequest
+using UnityEngine.SceneManagement; // Required for scene management
 using TMPro; // Required for TMP_InputField
 
 public class LoginManager : MonoBehaviour
 {
-    private string loginUrl = "http://localhost/codenamesAPI/Login.php"; // PHP Login URL
+    private string apiUrl = "http://localhost/codenamesAPI/Login.php"; // PHP Login URL
     private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP Check Access URL
 
     [System.Serializable]
@@ -23,27 +24,26 @@ public class LoginManager : MonoBehaviour
         public string token; // Token for authentication
     }
 
-    // TMP_InputField for email and password
     public TMP_InputField emailInputField; // Assign this in the Inspector
     public TMP_InputField passwordInputField; // Assign this in the Inspector
+    private string sessionToken;
 
-    private string sessionToken; // Token received from the server
-
-    // Called when the login button is clicked
+    // SubmitLogin is called when the user presses the Login button
     public void SubmitLogin()
     {
-        string email = emailInputField.text; // Get email from TMP_InputField
-        string password = passwordInputField.text; // Get password from TMP_InputField
+        string email = emailInputField.text;
+        string password = passwordInputField.text;
 
-        StartCoroutine(Login(email, password));
+        StartCoroutine(Login(email, password)); // Start the coroutine for login
     }
 
+    // Coroutine that sends the login data to the server and handles the response
     IEnumerator Login(string email, string password)
     {
         LoginData loginData = new LoginData { email = email, password = password };
         string jsonData = JsonUtility.ToJson(loginData);
 
-        UnityWebRequest www = new UnityWebRequest(loginUrl, "POST");
+        UnityWebRequest www = new UnityWebRequest(apiUrl, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -58,14 +58,16 @@ public class LoginManager : MonoBehaviour
         else
         {
             string jsonResult = www.downloadHandler.text;
-            Debug.Log("Ontvangen JSON: " + jsonResult);
-
             ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
             if (response.status == "success")
             {
-                Debug.Log("Login succesvol: " + response.message);
-                sessionToken = response.token; // Store the token for future requests
+                // Save the session token after a successful login
+                sessionToken = response.token;
+                PlayerPrefs.SetString("SessionToken", sessionToken); // Save session token to PlayerPrefs
+                PlayerPrefs.Save();
+                Debug.Log("Login succesvol.");
+                SceneManager.LoadScene("DashboardTeachers"); // Load Teacher's Dashboard
             }
             else
             {
@@ -74,46 +76,12 @@ public class LoginManager : MonoBehaviour
         }
     }
 
-    // Check access using the stored token
-    public void CheckAccess()
+    // Logout function to clear the session token and redirect to the login scene
+    public void Logout()
     {
-        if (string.IsNullOrEmpty(sessionToken))
-        {
-            Debug.LogError("Geen sessie-token. Gebruiker is niet ingelogd.");
-            return;
-        }
-
-        StartCoroutine(VerifyAccess());
-    }
-
-    IEnumerator VerifyAccess()
-    {
-        UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "GET");
-        www.downloadHandler = new DownloadHandlerBuffer();
-        www.SetRequestHeader("Authorization", "Bearer " + sessionToken);
-
-        yield return www.SendWebRequest();
-
-        if (www.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("Fout bij verificatie: " + www.error);
-        }
-        else
-        {
-            string jsonResult = www.downloadHandler.text;
-            Debug.Log("Ontvangen JSON bij verificatie: " + jsonResult);
-
-            ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
-
-            if (response.status == "success")
-            {
-                Debug.Log("Toegang toegestaan: " + response.message);
-                // Proceed to teacher's dashboard or restricted area
-            }
-            else
-            {
-                Debug.LogError("Toegang geweigerd: " + response.message);
-            }
-        }
+        sessionToken = null; // Clear the session token
+        PlayerPrefs.DeleteKey("SessionToken"); // Remove the token from PlayerPrefs
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("Login"); // Redirect to login screen
     }
 }
