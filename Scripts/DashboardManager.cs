@@ -72,7 +72,6 @@ public class DashboardManager : MonoBehaviour
         }
     }
 
-
     [System.Serializable]
     public class ResponseData
     {
