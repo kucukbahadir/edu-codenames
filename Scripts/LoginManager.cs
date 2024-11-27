@@ -7,7 +7,6 @@ using TMPro; // Required for TMP_InputField
 public class LoginManager : MonoBehaviour
 {
     private string apiUrl = "http://localhost/codenamesAPI/Login.php"; // PHP Login URL
-    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP Check Access URL
 
     [System.Serializable]
     public class LoginData
@@ -26,6 +25,7 @@ public class LoginManager : MonoBehaviour
 
     public TMP_InputField emailInputField; // Assign this in the Inspector
     public TMP_InputField passwordInputField; // Assign this in the Inspector
+    public TMP_Text errorText; // Text object to display error messages
     private string sessionToken;
 
     // SubmitLogin is called when the user presses the Login button
@@ -53,7 +53,7 @@ public class LoginManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Fout bij login: " + www.error);
+            ShowErrorMessage("Er is een probleem met de verbinding. Probeer het later opnieuw.");
         }
         else
         {
@@ -66,13 +66,36 @@ public class LoginManager : MonoBehaviour
                 sessionToken = response.token;
                 PlayerPrefs.SetString("SessionToken", sessionToken); // Save session token to PlayerPrefs
                 PlayerPrefs.Save();
-                Debug.Log("Login succesvol.");
                 SceneManager.LoadScene("DashboardTeachers"); // Load Teacher's Dashboard
             }
             else
             {
-                Debug.LogError("Login fout: " + response.message);
+                ShowErrorMessage("Email en/of wachtwoord fout.");
+                ResetInputFields();
             }
+        }
+    }
+
+    // Display the error message in the ErrorMSG text
+    private void ShowErrorMessage(string message)
+    {
+        if (errorText != null)
+        {
+            errorText.text = message;
+        }
+    }
+
+    // Reset the input fields for email and password
+    private void ResetInputFields()
+    {
+        if (emailInputField != null)
+        {
+            emailInputField.text = "";
+        }
+
+        if (passwordInputField != null)
+        {
+            passwordInputField.text = "";
         }
     }
 
