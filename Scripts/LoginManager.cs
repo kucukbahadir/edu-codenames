@@ -7,7 +7,6 @@ using TMPro; // Required for TMP_InputField
 public class LoginManager : MonoBehaviour
 {
     private string apiUrl = "http://localhost/codenamesAPI/Login.php"; // PHP Login URL
-    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP Check Access URL
 
     [System.Serializable]
     public class LoginData
@@ -67,7 +66,6 @@ public class LoginManager : MonoBehaviour
                 sessionToken = response.token;
                 PlayerPrefs.SetString("SessionToken", sessionToken); // Save session token to PlayerPrefs
                 PlayerPrefs.Save();
-                Debug.Log("Login succesvol.");
                 SceneManager.LoadScene("DashboardTeachers"); // Load Teacher's Dashboard
             }
             else
@@ -99,6 +97,8 @@ public class LoginManager : MonoBehaviour
         {
             passwordInputField.text = "";
         }
+    }
+
     // Logout function to clear the session token and redirect to the login scene
     public void Logout()
     {
