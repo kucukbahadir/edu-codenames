@@ -917,6 +917,8 @@ RectTransform:
   - {fileID: 813891313}
   - {fileID: 1437068694}
   - {fileID: 771756625}
+  - {fileID: 226055984}
+  - {fileID: 2034909082}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2620,6 +2622,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7314688705531900020, guid: 84bb625f54bd6ac4ab6264d3f5fcef81, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1654170632}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 84bb625f54bd6ac4ab6264d3f5fcef81, type: 3}
 --- !u!224 &1654170630 stripped
 RectTransform:
