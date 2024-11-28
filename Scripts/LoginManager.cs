@@ -99,7 +99,7 @@ public class LoginManager : MonoBehaviour
         }
     }
 
-    // Logout function to clear the session token and redirect to the login scene
+    
     public void Logout()
     {
         sessionToken = null; // Clear the session token
@@ -107,4 +107,6 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.Save();
         SceneManager.LoadScene("Login"); // Redirect to login screen
     }
+
+
 }

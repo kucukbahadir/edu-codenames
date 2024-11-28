@@ -86,4 +86,8 @@ public class DashboardManager : MonoBehaviour
         PlayerPrefs.Save(); // Save the changes to PlayerPrefs
         SceneManager.LoadScene("Login"); // Redirect to Login scene
     }
+    public void AddGameRedirect()
+    {
+        SceneManager.LoadScene("AddGame"); // Redirect to add game screen
+    }
 }
