@@ -72,13 +72,13 @@ public class DashboardManager : MonoBehaviour
         }
     }
 
+
     [System.Serializable]
     public class ResponseData
     {
         public string status;
         public string message;
     }
-
     // Logout function to clear the session token and redirect to login
     public void Logout()
     {
