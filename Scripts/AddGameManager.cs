@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 public class AddGameManager : MonoBehaviour
 {
@@ -10,80 +9,15 @@ public class AddGameManager : MonoBehaviour
     public TMP_InputField TrefwoordInput;
     public TMP_InputField BetekenisInput;
 
-    public TextMeshProUGUI FeedbackText;
-    public Transform TrefwoordenLijstContent;
-    public GameObject TrefwoordPrefab;
+    public TextMeshProUGUI FeedbackText; // Voor fout- of succesmeldingen
+    public Transform TrefwoordenLijstContent; // The Content object of your Scroll View
+    public GameObject TrefwoordPrefab; // Een prefab met de naam en betekenis als UI-element
 
     private string gameName = "";
     private int gameID = -1; // ID van de game in de database
     private string apiUrlCreateGame = "http://localhost/codenamesAPI/CreateGame.php";
     private string apiUrlAddTrefwoord = "http://localhost/codenamesAPI/AddTrefwoord.php";
-    private string apiUrlCheckGameName = "http://localhost/codenamesAPI/CheckGameName.php";
-    [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
-
-
-    void Start()
-    {
-        // Get the session token from PlayerPrefs
-        string sessionToken = PlayerPrefs.GetString("SessionToken", "");
-
-        // Debug: Log the session token in Unity
-        Debug.Log("Session Token in AddGameManager: " + sessionToken);
-
-        if (string.IsNullOrEmpty(sessionToken))
-        {
-            Debug.LogError("No session token found. Redirecting to login.");
-            SceneManager.LoadScene("Login"); // Redirect to Login scene
-            return;
-        }
-
-        StartCoroutine(CheckAccess(sessionToken));
-    }
-
-    IEnumerator CheckAccess(string sessionToken)
-    {
-        // Prepare the POST request with the session token
-        UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
-        string json = "{\"session_token\":\"" + sessionToken + "\"}"; // Construct JSON string
-        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
-        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        www.downloadHandler = new DownloadHandlerBuffer();
-        www.SetRequestHeader("Content-Type", "application/json");
-
-        yield return www.SendWebRequest();
-
-        if (www.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("Access check failed: " + www.error);
-            SceneManager.LoadScene("Login"); // Redirect to Login if check fails
-        }
-        else
-        {
-            try
-            {
-                string jsonResult = www.downloadHandler.text;
-                Debug.Log("Access check result in AddGameManager: " + jsonResult);
-
-                ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
-
-                if (response.status != "success")
-                {
-                    Debug.LogError("Access denied in AddGameManager: " + response.message);
-                    SceneManager.LoadScene("Login");
-                }
-                else
-                {
-                    Debug.Log("Access granted in AddGameManager: " + response.message);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError("JSON parse error in AddGameManager: " + ex.Message);
-                SceneManager.LoadScene("Login");
-            }
-        }
-    }
-
+    private string apiUrlCheckGameName = "http://localhost/codenamesAPI/CheckGameName.php"; // URL to check the game name
 
     // Wordt aangeroepen door de knop "Game aanmaken"
     public void CreateGame()
@@ -91,12 +25,51 @@ public class AddGameManager : MonoBehaviour
         string gameNaam = GameNaamInput.text.Trim();
         if (string.IsNullOrEmpty(gameNaam))
         {
-            FeedbackText.text = "Vul een naam in voor de game.";
+            FeedbackText.text = "Vul een naam in voor de game.";  // This message should appear if input is empty
             return;
         }
 
-        StartCoroutine(CreateGameRequest(gameNaam));
+        Debug.Log($"Game Name: {gameNaam}");  // Debugging log to check if gameNaam is being populated
+
+        StartCoroutine(CheckGameName(gameNaam));  // Proceed with the game name check
     }
+
+
+    // New function to check if the game name already exists
+    private IEnumerator CheckGameName(string gameNaam)
+    {
+        WWWForm form = new WWWForm();
+        form.AddField("gameNaam", gameNaam);
+
+        // Log the data being sent
+        Debug.Log($"Sending Game Name: {gameNaam}");
+
+        UnityWebRequest www = UnityWebRequest.Post(apiUrlCheckGameName, form);
+
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            FeedbackText.text = "Fout bij het controleren van de gamenaam: " + www.error;
+        }
+        else
+        {
+            string result = www.downloadHandler.text;
+            GenericResponse response = JsonUtility.FromJson<GenericResponse>(result);
+
+            if (response.status == "error")
+            {
+                // If game name exists, show error message
+                FeedbackText.text = response.message; // "Gamenaam bestaat al"
+            }
+            else
+            {
+                // If game name is available, proceed to create the game
+                StartCoroutine(CreateGameRequest(gameNaam));
+            }
+        }
+    }
+
 
     // Wordt aangeroepen door de knop "Toevoegen"
     public void AddTrefwoord()
@@ -195,17 +168,8 @@ public class AddGameManager : MonoBehaviour
             texts[0].text = $"Trefwoord: {trefwoord}";
             texts[1].text = $"Betekenis: {betekenis}";
         }
-    }
 
-    public void FinishAndGoToDashboard()
-    {
-        SceneManager.LoadScene("DashboardTeachers");
-    }
-    [System.Serializable]
-    public class ResponseData
-    {
-        public string status;
-        public string message;
+        Debug.Log($"Prefab toegevoegd op positie: {newItem.transform.localPosition}");
     }
 
     [System.Serializable]
@@ -221,25 +185,5 @@ public class AddGameManager : MonoBehaviour
     {
         public string status;
         public string message;
-using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
-
-public class AddGameManager : MonoBehaviour
-{
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-    public TMP_InputField GameNaamInput;
-    public TMP_InputField TrefwoordInput;
-    public TMP_InputField BetekenisInput;
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
