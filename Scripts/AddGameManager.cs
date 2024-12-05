@@ -9,9 +9,9 @@ public class AddGameManager : MonoBehaviour
     public TMP_InputField TrefwoordInput;
     public TMP_InputField BetekenisInput;
 
-    public TextMeshProUGUI FeedbackText; // Voor fout- of succesmeldingen
-    public Transform TrefwoordenLijstContent; // The Content object of your Scroll View
-    public GameObject TrefwoordPrefab; // Een prefab met de naam en betekenis als UI-element
+    public TextMeshProUGUI FeedbackText;
+    public Transform TrefwoordenLijstContent;
+    public GameObject TrefwoordPrefab;
 
     private string gameName = "";
     private int gameID = -1; // ID van de game in de database
@@ -35,6 +35,8 @@ public class AddGameManager : MonoBehaviour
     }
 
 
+
+
     // New function to check if the game name already exists
     private IEnumerator CheckGameName(string gameNaam)
     {
@@ -54,9 +56,9 @@ public class AddGameManager : MonoBehaviour
         }
         else
         {
+            Debug.Log("Goed gegaan met controleren");
             string result = www.downloadHandler.text;
             GenericResponse response = JsonUtility.FromJson<GenericResponse>(result);
-
             if (response.status == "error")
             {
                 // If game name exists, show error message
@@ -66,6 +68,7 @@ public class AddGameManager : MonoBehaviour
             {
                 // If game name is available, proceed to create the game
                 StartCoroutine(CreateGameRequest(gameNaam));
+                Debug.Log("Game is aangemaakt");
             }
         }
     }
