@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "AddGameManager.cs",
               "ToolTip": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\AddGameManager.cs",
               "RelativeToolTip": "AddGameManager.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAMAAAAMAAAA",
+              "ViewState": "AQIAADkAAAAAAAAAAAAAAEYAAAAtAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-12-03T16:51:12.142Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "DashboardManager.cs",
               "ViewState": "AQIAAAMAAAAAAAAAAAAAAFsAAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-11-26T16:34:41.635Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-11-26T16:34:41.635Z"
             },
             {
               "$type": "Document",
@@ -60,8 +59,7 @@
               "RelativeToolTip": "LoginManager.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAAMAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-11-20T16:02:51.806Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-11-20T16:02:51.806Z"
             }
           ]
         }
