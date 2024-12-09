@@ -1,11 +1,18 @@
 using UnityEngine;
-using System.Collections; // Required for IEnumerator
+using System.Collections;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
     private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP access check URL
+    private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php"; // URL to fetch games data
+
+    public Transform GamesTable; // Parent for all game rows
+    public GameObject GameRowPrefab; // Prefab for a game row
+    public GameObject TrefwoordRowPrefab; // Prefab for a trefwoord row
 
     void Start()
     {
@@ -27,7 +34,6 @@ public class DashboardManager : MonoBehaviour
 
     IEnumerator CheckAccess(string sessionToken)
     {
-        // Prepare the POST request with the session token
         UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
         string json = "{\"session_token\":\"" + sessionToken + "\"}"; // Construct JSON string
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
@@ -44,41 +50,96 @@ public class DashboardManager : MonoBehaviour
         }
         else
         {
-            // Check if the response is valid JSON
             try
             {
                 string jsonResult = www.downloadHandler.text;
-                Debug.Log("Access check result: " + jsonResult); // Log the response from PHP
+                Debug.Log("Access check result: " + jsonResult);
 
-                // Ensure that the response is valid JSON
                 ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
                 if (response.status != "success")
                 {
                     Debug.LogError("Access denied: " + response.message);
-                    SceneManager.LoadScene("Login"); // Redirect to login if access is denied
+                    SceneManager.LoadScene("Login");
                 }
                 else
                 {
                     Debug.Log("Access granted: " + response.message);
+                    StartCoroutine(FetchGamesData());
                 }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError("JSON parse error: " + ex.Message);
-                // Handle the error (e.g., redirect to login if JSON parsing fails)
                 SceneManager.LoadScene("Login");
             }
         }
     }
 
-
-    [System.Serializable]
-    public class ResponseData
+    IEnumerator FetchGamesData()
     {
-        public string status;
-        public string message;
+        UnityWebRequest www = UnityWebRequest.Get(fetchGamesUrl);
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Error fetching games data: " + www.error);
+        }
+        else
+        {
+            string json = www.downloadHandler.text;
+            Debug.Log("Games data: " + json);
+
+            // Deserialize and populate the table
+            try
+            {
+                GamesResponse gamesResponse = JsonUtility.FromJson<GamesResponse>(json);
+                PopulateGamesTable(gamesResponse.games);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("JSON parse error: " + ex.Message);
+            }
+        }
     }
+
+    void PopulateGamesTable(List<GameData> games)
+    {
+        foreach (var game in games)
+        {
+            // Create a row for the game
+            GameObject gameRow = Instantiate(GameRowPrefab, GamesTable);
+            TextMeshProUGUI gameNameText = gameRow.GetComponentInChildren<TextMeshProUGUI>();
+            gameNameText.text = game.name;
+
+            Transform trefwoordenParent = gameRow.transform.Find("TrefwoordenContainer");
+            if (trefwoordenParent == null)
+            {
+                Debug.LogError("TrefwoordenContainer is missing in GameRowPrefab.");
+                continue;
+            }
+
+            // Hide the TrefwoordenContainer by default
+            trefwoordenParent.gameObject.SetActive(false);
+
+            // Add button functionality for folding/unfolding
+            gameRow.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() =>
+            {
+                bool isActive = trefwoordenParent.gameObject.activeSelf;
+                trefwoordenParent.gameObject.SetActive(!isActive);
+            });
+
+            // Add Trefwoord rows
+            foreach (var trefwoord in game.trefwoorden)
+            {
+                GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
+                TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
+                texts[0].text = trefwoord.trefwoord;
+                texts[1].text = trefwoord.betekenis;
+            }
+        }
+    }
+
     // Logout function to clear the session token and redirect to login
     public void Logout()
     {
@@ -86,8 +147,36 @@ public class DashboardManager : MonoBehaviour
         PlayerPrefs.Save(); // Save the changes to PlayerPrefs
         SceneManager.LoadScene("Login"); // Redirect to Login scene
     }
+
     public void AddGameRedirect()
     {
         SceneManager.LoadScene("AddGame"); // Redirect to add game screen
+    }
+
+    [System.Serializable]
+    public class ResponseData
+    {
+        public string status;
+        public string message;
+    }
+
+    [System.Serializable]
+    public class TrefwoordData
+    {
+        public string trefwoord;
+        public string betekenis;
+    }
+
+    [System.Serializable]
+    public class GameData
+    {
+        public string name;
+        public List<TrefwoordData> trefwoorden;
+    }
+
+    [System.Serializable]
+    public class GamesResponse
+    {
+        public List<GameData> games;
     }
 }
