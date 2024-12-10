@@ -105,6 +105,12 @@ public class DashboardManager : MonoBehaviour
 
     void PopulateGamesTable(List<GameData> games)
     {
+        // Clear existing rows
+        foreach (Transform child in GamesTable)
+        {
+            Destroy(child.gameObject);
+        }
+
         foreach (var game in games)
         {
             // Create a row for the game
@@ -134,8 +140,11 @@ public class DashboardManager : MonoBehaviour
             {
                 GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
                 TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
-                texts[0].text = trefwoord.trefwoord;
-                texts[1].text = trefwoord.betekenis;
+                if (texts.Length >= 2)
+                {
+                    texts[0].text = trefwoord.trefwoord; // Trefwoord
+                    texts[1].text = trefwoord.betekenis; // Betekenis
+                }
             }
         }
     }
