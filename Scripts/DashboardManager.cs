@@ -7,51 +7,42 @@ using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
-    // URLs voor toegang en data ophalen
-    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP-URL voor toegang controleren
+    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // URL voor toegang controleren
     private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php"; // URL om spelgegevens op te halen
 
-    // Referenties naar UI-elementen
-    public Transform GamesTable; // Ouderelement voor alle spelrijen
-    public GameObject GameRowPrefab; // Prefab voor een rij met een spel
-    public GameObject TrefwoordRowPrefab; // Prefab voor een rij met trefwoorden
+    public Transform GamesTable; // Container voor spelrijen
+    public GameObject GameRowPrefab; // Prefab voor een spelrij
+    public GameObject TrefwoordRowPrefab; // Prefab voor trefwoordrij
 
     void Start()
     {
-        // Haal de sessietoken op uit PlayerPrefs
         string sessionToken = PlayerPrefs.GetString("SessionToken", "");
 
-        // Debug: Log de sessietoken voor debugging
         Debug.Log("Session Token: " + sessionToken);
 
-        // Als er geen sessietoken is, wordt de gebruiker doorgestuurd naar de login-pagina
         if (string.IsNullOrEmpty(sessionToken))
         {
             Debug.LogError("Geen sessietoken gevonden. Doorsturen naar login.");
-            SceneManager.LoadScene("Login"); // Doorsturen naar login-scherm
+            SceneManager.LoadScene("Login");
             return;
         }
 
-        // Start de controle van toegang met het opgehaalde sessietoken
         StartCoroutine(CheckAccess(sessionToken));
     }
 
-    // Coroutine om toegang te controleren via een POST-verzoek naar de server
     IEnumerator CheckAccess(string sessionToken)
     {
         UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
-        string json = "{\"session_token\":\"" + sessionToken + "\"}"; // JSON-string samenstellen
+        string json = "{\"session_token\":\"" + sessionToken + "\"}";
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
 
-        // Wacht tot het verzoek compleet is
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            // Foutmelding en doorsturen naar login als het verzoek faalt
             Debug.LogError("Toegang controleren mislukt: " + www.error);
             SceneManager.LoadScene("Login");
         }
@@ -59,11 +50,9 @@ public class DashboardManager : MonoBehaviour
         {
             try
             {
-                // Verwerk het resultaat van het verzoek
                 string jsonResult = www.downloadHandler.text;
                 Debug.Log("Resultaat toegang controleren: " + jsonResult);
 
-                // JSON-parseren om te zien of toegang is toegestaan
                 ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
                 if (response.status != "success")
@@ -74,19 +63,17 @@ public class DashboardManager : MonoBehaviour
                 else
                 {
                     Debug.Log("Toegang verleend: " + response.message);
-                    StartCoroutine(FetchGamesData()); // Haal spelgegevens op als toegang is verleend
+                    StartCoroutine(FetchGamesData());
                 }
             }
             catch (System.Exception ex)
             {
-                // Fout bij JSON-parsing en doorsturen naar login
                 Debug.LogError("JSON-parserfout: " + ex.Message);
                 SceneManager.LoadScene("Login");
             }
         }
     }
 
-    // Coroutine om spelgegevens van de server op te halen
     IEnumerator FetchGamesData()
     {
         UnityWebRequest www = UnityWebRequest.Get(fetchGamesUrl);
@@ -94,46 +81,49 @@ public class DashboardManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            // Log foutmelding als het ophalen van gegevens mislukt
             Debug.LogError("Fout bij het ophalen van spelgegevens: " + www.error);
         }
         else
         {
-            // Verwerk het antwoord van de server
             string json = www.downloadHandler.text;
             Debug.Log("Spelgegevens: " + json);
 
             try
             {
-                // Parse de JSON-data en vul de tabel
                 GamesResponse gamesResponse = JsonUtility.FromJson<GamesResponse>(json);
                 PopulateGamesTable(gamesResponse.games);
             }
             catch (System.Exception ex)
             {
-                // Log een fout als JSON niet goed wordt verwerkt
                 Debug.LogError("JSON-parserfout: " + ex.Message);
             }
         }
     }
 
-    // Vul de tabel met spellen en hun trefwoorden
     void PopulateGamesTable(List<GameData> games)
     {
-        // Verwijder oude rijen als de tabel opnieuw wordt gevuld
         foreach (Transform child in GamesTable)
         {
-            Destroy(child.gameObject);
+            Destroy(child.gameObject); // Verwijder oude rijen
         }
+
+        Debug.Log("Populeren van tabel gestart. Aantal spellen: " + games.Count);
 
         foreach (var game in games)
         {
-            // Maak een nieuwe rij voor het spel
+            Debug.Log("Bezig met verwerken van spel: " + game.name);
+
             GameObject gameRow = Instantiate(GameRowPrefab, GamesTable);
             TextMeshProUGUI gameNameText = gameRow.GetComponentInChildren<TextMeshProUGUI>();
-            gameNameText.text = game.name; // Stel de naam van het spel in
 
-            // Zoek de container voor trefwoorden in de prefab
+            if (gameNameText == null)
+            {
+                Debug.LogError("TextMeshProUGUI component niet gevonden in GameRowPrefab.");
+                continue;
+            }
+
+            gameNameText.text = game.name;
+
             Transform trefwoordenParent = gameRow.transform.Find("TrefwoordenContainer");
             if (trefwoordenParent == null)
             {
@@ -141,69 +131,69 @@ public class DashboardManager : MonoBehaviour
                 continue;
             }
 
-            // Verberg de trefwoordencontainer standaard
-            trefwoordenParent.gameObject.SetActive(false);
+            Debug.Log("Aantal trefwoorden voor " + game.name + ": " + game.trefwoorden.Count);
 
-            // Voeg functionaliteit toe om de trefwoorden te tonen/verbergen
-            gameRow.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() =>
-            {
-                bool isActive = trefwoordenParent.gameObject.activeSelf;
-                trefwoordenParent.gameObject.SetActive(!isActive); // Toggle zichtbaar/onzichtbaar
-            });
-
-            // Voeg rijen toe voor elk trefwoord
             foreach (var trefwoord in game.trefwoorden)
             {
                 GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
                 TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
-                if (texts.Length >= 2)
+
+                if (texts.Length < 2)
                 {
-                    texts[0].text = trefwoord.trefwoord; // Stel het trefwoord in
-                    texts[1].text = trefwoord.betekenis; // Stel de betekenis in
+                    Debug.LogError("TrefwoordRowPrefab heeft niet genoeg TextMeshProUGUI componenten.");
+                    continue;
                 }
+
+                texts[0].text = trefwoord.trefwoord;
+                texts[1].text = trefwoord.betekenis;
             }
+
+            trefwoordenParent.gameObject.SetActive(false);
+
+            gameRow.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() =>
+            {
+                bool isActive = trefwoordenParent.gameObject.activeSelf;
+                trefwoordenParent.gameObject.SetActive(!isActive);
+            });
         }
     }
 
-    // Functie om uit te loggen en de gebruiker terug te sturen naar login
     public void Logout()
     {
-        PlayerPrefs.DeleteKey("SessionToken"); // Verwijder de sessietoken uit PlayerPrefs
-        PlayerPrefs.Save(); // Sla wijzigingen in PlayerPrefs op
-        SceneManager.LoadScene("Login"); // Doorsturen naar het login-scherm
+        PlayerPrefs.DeleteKey("SessionToken");
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("Login");
     }
 
-    // Functie om naar het AddGame-scherm te gaan
     public void AddGameRedirect()
     {
         SceneManager.LoadScene("AddGame");
     }
 
-    // Klassen om gegevens uit de JSON-structuur te deserialiseren
     [System.Serializable]
     public class ResponseData
     {
-        public string status; // Status van de toegang (bijv. "success" of "error")
-        public string message; // Bericht van de server
+        public string status;
+        public string message;
     }
 
     [System.Serializable]
     public class TrefwoordData
     {
-        public string trefwoord; // Trefwoord
-        public string betekenis; // Betekenis van het trefwoord
+        public string trefwoord;
+        public string betekenis;
     }
 
     [System.Serializable]
     public class GameData
     {
-        public string name; // Naam van het spel
-        public List<TrefwoordData> trefwoorden; // Lijst van trefwoorden bij het spel
+        public string name;
+        public List<TrefwoordData> trefwoorden;
     }
 
     [System.Serializable]
     public class GamesResponse
     {
-        public List<GameData> games; // Lijst van alle spellen
+        public List<GameData> games;
     }
 }
