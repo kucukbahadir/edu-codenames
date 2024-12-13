@@ -102,27 +102,35 @@ public class DashboardManager : MonoBehaviour
 
     void PopulateGamesTable(List<GameData> games)
     {
+        // Verwijder oude rijen
         foreach (Transform child in GamesTable)
         {
-            Destroy(child.gameObject); // Verwijder oude rijen
+            Destroy(child.gameObject);
         }
-
-        Debug.Log("Populeren van tabel gestart. Aantal spellen: " + games.Count);
+        Debug.Log("GamesTable gereinigd.");
 
         foreach (var game in games)
         {
             Debug.Log("Bezig met verwerken van spel: " + game.name);
 
+            // Instantieer een rij
             GameObject gameRow = Instantiate(GameRowPrefab, GamesTable);
-            TextMeshProUGUI gameNameText = gameRow.GetComponentInChildren<TextMeshProUGUI>();
 
+            if (gameRow == null)
+            {
+                Debug.LogError("GameRowPrefab instantiëren mislukt.");
+                continue;
+            }
+
+            TextMeshProUGUI gameNameText = gameRow.GetComponentInChildren<TextMeshProUGUI>();
             if (gameNameText == null)
             {
-                Debug.LogError("TextMeshProUGUI component niet gevonden in GameRowPrefab.");
+                Debug.LogError("Geen TextMeshProUGUI gevonden in GameRowPrefab.");
                 continue;
             }
 
             gameNameText.text = game.name;
+            Debug.Log("Naam ingesteld: " + game.name);
 
             Transform trefwoordenParent = gameRow.transform.Find("TrefwoordenContainer");
             if (trefwoordenParent == null)
@@ -131,32 +139,44 @@ public class DashboardManager : MonoBehaviour
                 continue;
             }
 
-            Debug.Log("Aantal trefwoorden voor " + game.name + ": " + game.trefwoorden.Count);
-
             foreach (var trefwoord in game.trefwoorden)
             {
-                GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
-                TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
+                Debug.Log("Verwerken trefwoord: " + trefwoord.trefwoord);
 
+                GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
+                if (trefwoordRow == null)
+                {
+                    Debug.LogError("TrefwoordRowPrefab instantiëren mislukt.");
+                    continue;
+                }
+
+                TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
                 if (texts.Length < 2)
                 {
-                    Debug.LogError("TrefwoordRowPrefab heeft niet genoeg TextMeshProUGUI componenten.");
+                    Debug.LogError("TrefwoordRowPrefab bevat niet genoeg TextMeshProUGUI componenten.");
                     continue;
                 }
 
                 texts[0].text = trefwoord.trefwoord;
                 texts[1].text = trefwoord.betekenis;
+
+                Debug.Log("Trefwoord ingesteld: " + trefwoord.trefwoord + ", Betekenis: " + trefwoord.betekenis);
             }
 
             trefwoordenParent.gameObject.SetActive(false);
+            Debug.Log("Trefwoordencontainer verborgen voor spel: " + game.name);
 
+            // Voeg knopfunctionaliteit toe
             gameRow.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() =>
             {
                 bool isActive = trefwoordenParent.gameObject.activeSelf;
                 trefwoordenParent.gameObject.SetActive(!isActive);
+                Debug.Log("Trefwoordencontainer toggled voor spel: " + game.name);
             });
         }
+        Debug.Log("Populeren van tabel voltooid.");
     }
+
 
     public void Logout()
     {
