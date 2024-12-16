@@ -7,12 +7,13 @@ using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
-    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // URL voor toegang controleren
-    private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php"; // URL om spelgegevens op te halen
+    // API URLs
+    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
+    private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
 
-    public Transform GamesTable; // Container voor spelrijen
-    public GameObject GameRowPrefab; // Prefab voor een spelrij
-    public GameObject TrefwoordRowPrefab; // Prefab voor trefwoordrij
+    // UI elements for the table
+    public Transform tableContent; // Assign the table content container in the Inspector
+    public GameObject tableRowPrefab; // Assign a prefab for table rows in the Inspector
 
     void Start()
     {
@@ -22,7 +23,7 @@ public class DashboardManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(sessionToken))
         {
-            Debug.LogError("Geen sessietoken gevonden. Doorsturen naar login.");
+            Debug.LogError("No session token found. Redirecting to login.");
             SceneManager.LoadScene("Login");
             return;
         }
@@ -43,7 +44,7 @@ public class DashboardManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Toegang controleren mislukt: " + www.error);
+            Debug.LogError("Access check failed: " + www.error);
             SceneManager.LoadScene("Login");
         }
         else
@@ -51,24 +52,24 @@ public class DashboardManager : MonoBehaviour
             try
             {
                 string jsonResult = www.downloadHandler.text;
-                Debug.Log("Resultaat toegang controleren: " + jsonResult);
+                Debug.Log("Access Check Result: " + jsonResult);
 
                 ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
                 if (response.status != "success")
                 {
-                    Debug.LogError("Toegang geweigerd: " + response.message);
+                    Debug.LogError("Access denied: " + response.message);
                     SceneManager.LoadScene("Login");
                 }
                 else
                 {
-                    Debug.Log("Toegang verleend: " + response.message);
+                    Debug.Log("Access granted: " + response.message);
                     StartCoroutine(FetchGamesData());
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("JSON-parserfout: " + ex.Message);
+                Debug.LogError("JSON parse error: " + ex.Message);
                 SceneManager.LoadScene("Login");
             }
         }
@@ -81,102 +82,47 @@ public class DashboardManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Fout bij het ophalen van spelgegevens: " + www.error);
+            Debug.LogError("Failed to fetch games: " + www.error);
         }
         else
         {
-            string json = www.downloadHandler.text;
-            Debug.Log("Spelgegevens: " + json);
-
             try
             {
-                GamesResponse gamesResponse = JsonUtility.FromJson<GamesResponse>(json);
-                PopulateGamesTable(gamesResponse.games);
+                string jsonResult = www.downloadHandler.text;
+                Debug.Log("Games Data: " + jsonResult);
+
+                // Parse the JSON data into a list of games
+                List<Game> games = JsonUtility.FromJson<GamesResponse>("{\"games\":" + jsonResult + "}").games;
+
+                // Populate the Unity UI table with the data
+                PopulateTable(games);
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("JSON-parserfout: " + ex.Message);
+                Debug.LogError("JSON parse error: " + ex.Message);
             }
         }
     }
 
-    void PopulateGamesTable(List<GameData> games)
+    void PopulateTable(List<Game> games)
     {
-        // Verwijder oude rijen
-        foreach (Transform child in GamesTable)
+        // Clear any existing rows in the table
+        foreach (Transform child in tableContent)
         {
             Destroy(child.gameObject);
         }
-        Debug.Log("GamesTable gereinigd.");
 
-        foreach (var game in games)
+        // Add a new row for each game
+        foreach (Game game in games)
         {
-            Debug.Log("Bezig met verwerken van spel: " + game.name);
+            GameObject row = Instantiate(tableRowPrefab, tableContent);
 
-            // Instantieer een rij
-            GameObject gameRow = Instantiate(GameRowPrefab, GamesTable);
-
-            if (gameRow == null)
-            {
-                Debug.LogError("GameRowPrefab instantiëren mislukt.");
-                continue;
-            }
-
-            TextMeshProUGUI gameNameText = gameRow.GetComponentInChildren<TextMeshProUGUI>();
-            if (gameNameText == null)
-            {
-                Debug.LogError("Geen TextMeshProUGUI gevonden in GameRowPrefab.");
-                continue;
-            }
-
-            gameNameText.text = game.name;
-            Debug.Log("Naam ingesteld: " + game.name);
-
-            Transform trefwoordenParent = gameRow.transform.Find("TrefwoordenContainer");
-            if (trefwoordenParent == null)
-            {
-                Debug.LogError("TrefwoordenContainer ontbreekt in GameRowPrefab.");
-                continue;
-            }
-
-            foreach (var trefwoord in game.trefwoorden)
-            {
-                Debug.Log("Verwerken trefwoord: " + trefwoord.trefwoord);
-
-                GameObject trefwoordRow = Instantiate(TrefwoordRowPrefab, trefwoordenParent);
-                if (trefwoordRow == null)
-                {
-                    Debug.LogError("TrefwoordRowPrefab instantiëren mislukt.");
-                    continue;
-                }
-
-                TextMeshProUGUI[] texts = trefwoordRow.GetComponentsInChildren<TextMeshProUGUI>();
-                if (texts.Length < 2)
-                {
-                    Debug.LogError("TrefwoordRowPrefab bevat niet genoeg TextMeshProUGUI componenten.");
-                    continue;
-                }
-
-                texts[0].text = trefwoord.trefwoord;
-                texts[1].text = trefwoord.betekenis;
-
-                Debug.Log("Trefwoord ingesteld: " + trefwoord.trefwoord + ", Betekenis: " + trefwoord.betekenis);
-            }
-
-            trefwoordenParent.gameObject.SetActive(false);
-            Debug.Log("Trefwoordencontainer verborgen voor spel: " + game.name);
-
-            // Voeg knopfunctionaliteit toe
-            gameRow.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() =>
-            {
-                bool isActive = trefwoordenParent.gameObject.activeSelf;
-                trefwoordenParent.gameObject.SetActive(!isActive);
-                Debug.Log("Trefwoordencontainer toggled voor spel: " + game.name);
-            });
+            TextMeshProUGUI[] columns = row.GetComponentsInChildren<TextMeshProUGUI>();
+            columns[0].text = game.GameID.ToString(); // First column: GameID
+            columns[1].text = game.Gamenaam;         // Second column: Gamenaam
+            columns[2].text = string.Join(", ", game.Trefwoorden); // Third column: Trefwoorden
         }
-        Debug.Log("Populeren van tabel voltooid.");
     }
-
 
     public void Logout()
     {
@@ -190,6 +136,7 @@ public class DashboardManager : MonoBehaviour
         SceneManager.LoadScene("AddGame");
     }
 
+    // Classes for JSON parsing
     [System.Serializable]
     public class ResponseData
     {
@@ -198,22 +145,16 @@ public class DashboardManager : MonoBehaviour
     }
 
     [System.Serializable]
-    public class TrefwoordData
+    public class Game
     {
-        public string trefwoord;
-        public string betekenis;
-    }
-
-    [System.Serializable]
-    public class GameData
-    {
-        public string name;
-        public List<TrefwoordData> trefwoorden;
+        public int GameID;
+        public string Gamenaam;
+        public List<string> Trefwoorden;
     }
 
     [System.Serializable]
     public class GamesResponse
     {
-        public List<GameData> games;
+        public List<Game> games;
     }
 }
