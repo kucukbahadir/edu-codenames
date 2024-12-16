@@ -1,10 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class AddGameManager : MonoBehaviour
 {
-
     public TMP_InputField GameNaamInput;
     public TMP_InputField TrefwoordInput;
     public TMP_InputField BetekenisInput;
@@ -23,11 +24,23 @@ public class AddGameManager : MonoBehaviour
 
     void Start()
     {
-        
+        // Get the session token from PlayerPrefs
+        string sessionToken = PlayerPrefs.GetString("SessionToken", "");
+
+        // Debug: Log the session token in Unity
+        Debug.Log("Session Token in AddGameManager: " + sessionToken);
+
+        if (string.IsNullOrEmpty(sessionToken))
+        {
+            Debug.LogError("No session token found. Redirecting to login.");
+            SceneManager.LoadScene("Login"); // Redirect to Login scene
+            return;
+        }
+
+        StartCoroutine(CheckAccess(sessionToken));
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator CheckAccess(string sessionToken)
     {
         // Prepare the POST request with the session token
         UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
@@ -183,7 +196,6 @@ public class AddGameManager : MonoBehaviour
             texts[1].text = $"Betekenis: {betekenis}";
         }
     }
-
 
     public void FinishAndGoToDashboard()
     {
