@@ -1,24 +1,30 @@
 using UnityEngine;
-using System.Collections; // Required for IEnumerator
+using System.Collections;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
+
+    private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
+
+    // UI elements for the table
+    public Transform tableContent; // Assign the table content container in the Inspector
+    public GameObject tableRowPrefab; // Assign a prefab for table rows in the Inspector
     [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";    // PHP access check URL
 
     void Start()
     {
-        // Get the session token from PlayerPrefs
         string sessionToken = PlayerPrefs.GetString("SessionToken", "");
 
-        // Debug: Log the session token in Unity
         Debug.Log("Session Token: " + sessionToken);
 
         if (string.IsNullOrEmpty(sessionToken))
         {
             Debug.LogError("No session token found. Redirecting to login.");
-            SceneManager.LoadScene("Login"); // Redirect to Login scene
+            SceneManager.LoadScene("Login");
             return;
         }
 
@@ -27,9 +33,8 @@ public class DashboardManager : MonoBehaviour
 
     IEnumerator CheckAccess(string sessionToken)
     {
-        // Prepare the POST request with the session token
         UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
-        string json = "{\"session_token\":\"" + sessionToken + "\"}"; // Construct JSON string
+        string json = "{\"session_token\":\"" + sessionToken + "\"}";
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -40,54 +45,116 @@ public class DashboardManager : MonoBehaviour
         if (www.result != UnityWebRequest.Result.Success)
         {
             Debug.LogError("Access check failed: " + www.error);
-            SceneManager.LoadScene("Login"); // Redirect to Login if check fails
+            SceneManager.LoadScene("Login");
         }
         else
         {
-            // Check if the response is valid JSON
             try
             {
                 string jsonResult = www.downloadHandler.text;
-                Debug.Log("Access check result: " + jsonResult); // Log the response from PHP
+                Debug.Log("Access Check Result: " + jsonResult);
 
-                // Ensure that the response is valid JSON
                 ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
                 if (response.status != "success")
                 {
                     Debug.LogError("Access denied: " + response.message);
-                    SceneManager.LoadScene("Login"); // Redirect to login if access is denied
+                    SceneManager.LoadScene("Login");
                 }
                 else
                 {
                     Debug.Log("Access granted: " + response.message);
+                    StartCoroutine(FetchGamesData());
                 }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError("JSON parse error: " + ex.Message);
-                // Handle the error (e.g., redirect to login if JSON parsing fails)
                 SceneManager.LoadScene("Login");
             }
         }
     }
 
+    IEnumerator FetchGamesData()
+    {
+        UnityWebRequest www = UnityWebRequest.Get(fetchGamesUrl);
+        yield return www.SendWebRequest();
 
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Failed to fetch games: " + www.error);
+        }
+        else
+        {
+            try
+            {
+                string jsonResult = www.downloadHandler.text;
+                Debug.Log("Games Data: " + jsonResult);
+
+                // Parse the JSON data into a list of games
+                List<Game> games = JsonUtility.FromJson<GamesResponse>("{\"games\":" + jsonResult + "}").games;
+
+                // Populate the Unity UI table with the data
+                PopulateTable(games);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("JSON parse error: " + ex.Message);
+            }
+        }
+    }
+
+    void PopulateTable(List<Game> games)
+    {
+        // Clear any existing rows in the table
+        foreach (Transform child in tableContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Add a new row for each game
+        foreach (Game game in games)
+        {
+            GameObject row = Instantiate(tableRowPrefab, tableContent);
+
+            TextMeshProUGUI[] columns = row.GetComponentsInChildren<TextMeshProUGUI>();
+            columns[0].text = game.GameID.ToString(); // First column: GameID
+            columns[1].text = game.Gamenaam;         // Second column: Gamenaam
+            columns[2].text = string.Join(", ", game.Trefwoorden); // Third column: Trefwoorden
+        }
+    }
+
+    public void Logout()
+    {
+        PlayerPrefs.DeleteKey("SessionToken");
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("Login");
+    }
+
+    public void AddGameRedirect()
+    {
+        SceneManager.LoadScene("AddGame");
+    }
+
+    // Classes for JSON parsing
     [System.Serializable]
     public class ResponseData
     {
         public string status;
         public string message;
     }
-    // Logout function to clear the session token and redirect to login
-    public void Logout()
+
+    [System.Serializable]
+    public class Game
     {
-        PlayerPrefs.DeleteKey("SessionToken"); // Clear the session token from PlayerPrefs
-        PlayerPrefs.Save(); // Save the changes to PlayerPrefs
-        SceneManager.LoadScene("Login"); // Redirect to Login scene
+        public int GameID;
+        public string Gamenaam;
+        public List<string> Trefwoorden;
     }
-    public void AddGameRedirect()
+
+    [System.Serializable]
+    public class GamesResponse
     {
-        SceneManager.LoadScene("AddGame"); // Redirect to add game screen
+        public List<Game> games;
     }
 }

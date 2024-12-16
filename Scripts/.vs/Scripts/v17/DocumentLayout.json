@@ -7,12 +7,12 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:AddGameManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\LoginManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:LoginManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\DashboardManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:DashboardManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\LoginManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:LoginManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -32,32 +32,33 @@
               "RelativeDocumentMoniker": "AddGameManager.cs",
               "ToolTip": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\AddGameManager.cs",
               "RelativeToolTip": "AddGameManager.cs",
-              "ViewState": "AQIAADYAAAAAAAAAAAAAAEYAAAAwAAAA",
+              "ViewState": "AQIAADsAAAAAAAAAAAAcwFUAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-03T16:51:12.142Z",
+              "WhenOpened": "2024-12-16T16:12:10.326Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "DashboardManager.cs",
               "DocumentMoniker": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\DashboardManager.cs",
               "RelativeDocumentMoniker": "DashboardManager.cs",
               "ToolTip": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\DashboardManager.cs",
               "RelativeToolTip": "DashboardManager.cs",
-              "ViewState": "AQIAAAMAAAAAAAAAAAAAAFsAAAAFAAAA",
+              "ViewState": "AQIAAA8AAAAAAAAAAAAAAAcAAABlAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-11-26T16:34:41.635Z"
+              "WhenOpened": "2024-11-26T16:34:41.635Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "LoginManager.cs",
               "DocumentMoniker": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\LoginManager.cs",
               "RelativeDocumentMoniker": "LoginManager.cs",
               "ToolTip": "C:\\Users\\dinan\\source\\repos\\edu-codenames\\edu-codenames\\Assets\\Scripts\\LoginManager.cs",
               "RelativeToolTip": "LoginManager.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAAMAAAA",
+              "ViewState": "AQIAAF0AAAAAAAAAAAAgwG0AAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-11-20T16:02:51.806Z"
             }
