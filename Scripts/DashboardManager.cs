@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class DashboardManager : MonoBehaviour
 {
-    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php"; // PHP access check URL
+    [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";    // PHP access check URL
 
     void Start()
     {
