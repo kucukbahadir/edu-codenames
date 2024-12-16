@@ -1485,6 +1485,7 @@ MonoBehaviour:
   FeedbackText: {fileID: 1437068696}
   TrefwoordenLijstContent: {fileID: 1573447517}
   TrefwoordPrefab: {fileID: 3887397741043034930, guid: 7a99f32895c24104281f169859622f39, type: 3}
+  checkAccessUrl: http://localhost/codenamesAPI/CheckAccess.php
 --- !u!4 &943546586
 Transform:
   m_ObjectHideFlags: 0
