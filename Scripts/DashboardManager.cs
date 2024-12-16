@@ -7,13 +7,13 @@ using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
-
+    // API URLs
+    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
     private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
 
     // UI elements for the table
     public Transform tableContent; // Assign the table content container in the Inspector
     public GameObject tableRowPrefab; // Assign a prefab for table rows in the Inspector
-    [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";    // PHP access check URL
 
     void Start()
     {
