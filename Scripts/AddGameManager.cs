@@ -197,6 +197,7 @@ public class AddGameManager : MonoBehaviour
         }
     }
 
+
     public void FinishAndGoToDashboard()
     {
         SceneManager.LoadScene("DashboardTeachers");
