@@ -2,17 +2,15 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; 
 using System.Collections.Generic;
 using TMPro;
-
 
 public class DashboardManager : MonoBehaviour
 {
     // API URLs
     private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
     private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
-    private string deleteGameUrl = "http://localhost/codenamesAPI/DeleteGame.php";
+    public string deleteGameUrl = "https://jouw-api-url.com/delete-game"; // Vervang door jouw API URL
 
     // UI elements for the table
     public Transform tableContent; // Assign the table content container in the Inspector
@@ -94,7 +92,10 @@ public class DashboardManager : MonoBehaviour
                 string jsonResult = www.downloadHandler.text;
                 Debug.Log("Games Data: " + jsonResult);
 
+                // Parse the JSON data into a list of games
                 List<Game> games = JsonUtility.FromJson<GamesResponse>("{\"games\":" + jsonResult + "}").games;
+
+                // Populate the Unity UI table with the data
                 PopulateTable(games);
             }
             catch (System.Exception ex)
@@ -106,56 +107,46 @@ public class DashboardManager : MonoBehaviour
 
     void PopulateTable(List<Game> games)
     {
+        // Clear any existing rows in the table
         foreach (Transform child in tableContent)
         {
             Destroy(child.gameObject);
         }
 
+        // Add a new row for each game
         foreach (Game game in games)
         {
             GameObject row = Instantiate(tableRowPrefab, tableContent);
 
             TextMeshProUGUI[] columns = row.GetComponentsInChildren<TextMeshProUGUI>();
-            columns[0].text = game.GameID.ToString();  // Eerste kolom: GameID
-            columns[1].text = game.Gamenaam;          // Tweede kolom: Gamenaam
-            columns[2].text = FormatKeywords(game.Trefwoorden); // Derde kolom: Trefwoorden
-
-            // Verwijderen knop
-            Button deleteButton = row.GetComponentInChildren<Button>();
-            deleteButton.onClick.AddListener(() => DeleteGame(game.GameID));
-
-            // Aanpassen knop toevoegen
-            Button editButton = row.transform.Find("Aanpassen").GetComponent<Button>();
-            editButton.onClick.AddListener(() => EditGame(game.GameID, game.Gamenaam, game.Trefwoorden));
+            columns[0].text = game.GameID.ToString(); // First column: GameID
+            columns[1].text = game.Gamenaam;         // Second column: Gamenaam
+            columns[2].text = string.Join(", ", game.Trefwoorden); // Third column: Trefwoorden
         }
     }
-
-
-    string FormatKeywords(List<string> keywords)
+    public void DeleteGame()
     {
-        return string.Join("\n", keywords);
+        StartCoroutine(DeleteGameCoroutine());
     }
 
-
-    public void DeleteGame(int gameID)
+    IEnumerator DeleteGameCoroutine()
     {
-        Debug.Log("Sending Game ID: " + gameID);
-        StartCoroutine(DeleteGameCoroutine(gameID));
-    }
+        // Debug: Log dat we proberen te verwijderen
+        Debug.Log($"Proberen om game met ID {gameId} te verwijderen...");
 
-    IEnumerator DeleteGameCoroutine(int gameId)
-    {
+        // Controleer of er een geldige gameId is
         if (gameId <= 0)
         {
-            Debug.LogError("Invalid game ID: " + gameId);
+            Debug.LogError("Ongeldige game ID.");
+            if (feedbackText != null)
+                feedbackText.text = "Ongeldige game ID.";
             yield break;
         }
 
-        Debug.Log("Preparing to send Game ID: " + gameId);
+        // Maak het JSON-object met de game ID
+        string json = JsonUtility.ToJson(new { id = gameId });
 
-        string json = "{\"id\":" + gameId + "}";
-        Debug.Log("JSON Being Sent: " + json);
-
+        // Maak een POST-verzoek
         UnityWebRequest www = new UnityWebRequest(deleteGameUrl, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -167,54 +158,45 @@ public class DashboardManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Server connection error: " + www.error);
+            Debug.LogError("Fout bij het verwijderen van de game: " + www.error);
+            if (feedbackText != null)
+                feedbackText.text = "Fout bij verwijderen.";
         }
         else
         {
-            string serverResponse = www.downloadHandler.text;
-            Debug.Log("Serverantwoord: " + serverResponse);
+            // Verwerk de serverrespons
+            string responseText = www.downloadHandler.text;
+            Debug.Log("Serverrespons: " + responseText);
 
+            // Probeer de JSON-respons te parseren
             try
             {
-                var response = JsonUtility.FromJson<ResponseData>(serverResponse);
-                Debug.Log("Server Response Status: " + response.status);
-                Debug.Log("Server Response Message: " + response.message);
+                ResponseData response = JsonUtility.FromJson<ResponseData>(responseText);
 
                 if (response.status == "success")
                 {
                     Debug.Log("Game succesvol verwijderd.");
-                    // Tabel opnieuw inladen na succesvolle verwijdering
-                    StartCoroutine(FetchGamesData());
+                    if (feedbackText != null)
+                        feedbackText.text = "Game succesvol verwijderd.";
+                    // Eventueel: Ververs je UI of lijst met games hier
                 }
                 else
                 {
-                    Debug.LogError("Game kon niet worden verwijderd: " + response.message);
+                    Debug.LogError("Verwijderen mislukt: " + response.message);
+                    if (feedbackText != null)
+                        feedbackText.text = "Verwijderen mislukt: " + response.message;
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("Error parsing server response: " + ex.Message);
+                Debug.LogError("Fout bij het parsen van JSON: " + ex.Message);
+                if (feedbackText != null)
+                    feedbackText.text = "Fout bij serverrespons.";
             }
         }
     }
-    public void EditGame(int gameID, string gamenaam, List<string> trefwoorden)
-    {
-        // Bewaar de gegevens in PlayerPrefs om door te geven aan de nieuwe scene
-        PlayerPrefs.SetInt("EditGameID", gameID);
-        PlayerPrefs.SetString("EditGameName", gamenaam);
-        PlayerPrefs.SetString("EditGameKeywords", string.Join(",", trefwoorden));
-        PlayerPrefs.Save();
-
-        // Navigeer naar de EditGame-scene
-        SceneManager.LoadScene("EditGame");
-    }
-
-
-
-
-
-
-    public void Logout()
+}
+public void Logout()
     {
         PlayerPrefs.DeleteKey("SessionToken");
         PlayerPrefs.Save();
@@ -226,6 +208,7 @@ public class DashboardManager : MonoBehaviour
         SceneManager.LoadScene("AddGame");
     }
 
+    // Classes for JSON parsing
     [System.Serializable]
     public class ResponseData
     {
