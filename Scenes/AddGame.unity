@@ -1094,6 +1094,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Background
       objectReference: {fileID: 0}
+    - target: {fileID: 7314688705531900020, guid: 84bb625f54bd6ac4ab6264d3f5fcef81, type: 3}
+      propertyPath: m_Layer
+      value: 5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2336,11 +2340,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1692856039973308755, guid: 981e950ede6452744a5c5ea38e1bbd21, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -738
+      value: -571
       objectReference: {fileID: 0}
     - target: {fileID: 1692856039973308755, guid: 981e950ede6452744a5c5ea38e1bbd21, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 349.24
+      value: 372
       objectReference: {fileID: 0}
     - target: {fileID: 1692856039973308755, guid: 981e950ede6452744a5c5ea38e1bbd21, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

@@ -124,6 +124,7 @@ public class DashboardManager : MonoBehaviour
             columns[2].text = string.Join(", ", game.Trefwoorden); // Third column: Trefwoorden
         }
     }
+    /*
     public void DeleteGame()
     {
         StartCoroutine(DeleteGameCoroutine());
@@ -195,7 +196,7 @@ public class DashboardManager : MonoBehaviour
             }
         }
     }
-}
+}*/
 public void Logout()
     {
         PlayerPrefs.DeleteKey("SessionToken");
