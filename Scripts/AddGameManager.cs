@@ -4,7 +4,23 @@ using UnityEngine;
 
 public class AddGameManager : MonoBehaviour
 {
-    // Start is called before the first frame update
+
+    public TMP_InputField GameNaamInput;
+    public TMP_InputField TrefwoordInput;
+    public TMP_InputField BetekenisInput;
+
+    public TextMeshProUGUI FeedbackText;
+    public Transform TrefwoordenLijstContent;
+    public GameObject TrefwoordPrefab;
+
+    private string gameName = "";
+    private int gameID = -1; // ID van de game in de database
+    private string apiUrlCreateGame = "http://localhost/codenamesAPI/CreateGame.php";
+    private string apiUrlAddTrefwoord = "http://localhost/codenamesAPI/AddTrefwoord.php";
+    private string apiUrlCheckGameName = "http://localhost/codenamesAPI/CheckGameName.php";
+    [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
+
+
     void Start()
     {
         
