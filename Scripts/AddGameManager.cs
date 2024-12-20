@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class AddGameManager : MonoBehaviour
 {
+
     public TMP_InputField GameNaamInput;
     public TMP_InputField TrefwoordInput;
     public TMP_InputField BetekenisInput;
