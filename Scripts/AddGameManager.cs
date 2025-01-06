@@ -6,46 +6,49 @@ using UnityEngine.SceneManagement;
 
 public class AddGameManager : MonoBehaviour
 {
-
+    // Invoervelden voor game naam, trefwoorden en betekenis
     public TMP_InputField GameNaamInput;
     public TMP_InputField TrefwoordInput;
     public TMP_InputField BetekenisInput;
 
+    // Tekst voor feedback en UI-elementen voor de trefwoordenlijst
     public TextMeshProUGUI FeedbackText;
     public Transform TrefwoordenLijstContent;
     public GameObject TrefwoordPrefab;
 
+    // Interne variabelen voor game gegevens
     private string gameName = "";
     private int gameID = -1; // ID van de game in de database
     private string apiUrlCreateGame = "http://localhost/codenamesAPI/CreateGame.php";
     private string apiUrlAddTrefwoord = "http://localhost/codenamesAPI/AddTrefwoord.php";
-    private string apiUrlCheckGameName = "http://localhost/codenamesAPI/CheckGameName.php";
-    [SerializeField] private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
-
+    private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
 
     void Start()
     {
-        // Get the session token from PlayerPrefs
+        // Haal de sessietoken op uit PlayerPrefs
         string sessionToken = PlayerPrefs.GetString("SessionToken", "");
 
-        // Debug: Log the session token in Unity
+        // Debug: Log de sessietoken
         Debug.Log("Session Token in AddGameManager: " + sessionToken);
 
+        // Controleer of er een sessietoken aanwezig is
         if (string.IsNullOrEmpty(sessionToken))
         {
-            Debug.LogError("No session token found. Redirecting to login.");
-            SceneManager.LoadScene("Login"); // Redirect to Login scene
+            Debug.LogError("Geen sessietoken gevonden. Doorsturen naar login.");
+            SceneManager.LoadScene("Login"); // Ga naar het inlogscherm
             return;
         }
 
+        // Start een coroutine om de toegang te controleren
         StartCoroutine(CheckAccess(sessionToken));
     }
 
+    // Controleer de toegang op basis van de sessietoken
     IEnumerator CheckAccess(string sessionToken)
     {
-        // Prepare the POST request with the session token
+        // Maak een POST-request met de sessietoken
         UnityWebRequest www = new UnityWebRequest(checkAccessUrl, "POST");
-        string json = "{\"session_token\":\"" + sessionToken + "\"}"; // Construct JSON string
+        string json = "{\"session_token\":\"" + sessionToken + "\"}"; // JSON-tekst maken
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -53,63 +56,65 @@ public class AddGameManager : MonoBehaviour
 
         yield return www.SendWebRequest();
 
+        // Controleer de status van de aanvraag
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Access check failed: " + www.error);
-            SceneManager.LoadScene("Login"); // Redirect to Login if check fails
+            Debug.LogError("Toegangscontrole mislukt: " + www.error);
+            SceneManager.LoadScene("Login"); // Doorsturen naar login bij mislukking
         }
         else
         {
             try
             {
+                // Verwerk de JSON-respons
                 string jsonResult = www.downloadHandler.text;
-                Debug.Log("Access check result in AddGameManager: " + jsonResult);
+                Debug.Log("Resultaat toegangscontrole: " + jsonResult);
 
                 ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
                 if (response.status != "success")
                 {
-                    Debug.LogError("Access denied in AddGameManager: " + response.message);
+                    Debug.LogError("Toegang geweigerd: " + response.message);
                     SceneManager.LoadScene("Login");
                 }
                 else
                 {
-                    Debug.Log("Access granted in AddGameManager: " + response.message);
+                    Debug.Log("Toegang verleend: " + response.message);
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("JSON parse error in AddGameManager: " + ex.Message);
+                Debug.LogError("Fout bij JSON-parsing: " + ex.Message);
                 SceneManager.LoadScene("Login");
             }
         }
     }
 
-
-    // Wordt aangeroepen door de knop "Game aanmaken"
+    // Wordt aangeroepen bij het klikken op "Game aanmaken"
     public void CreateGame()
     {
-        string gameNaam = GameNaamInput.text.Trim();
+        string gameNaam = GameNaamInput.text.Trim(); // Haal de ingevoerde game naam op
         if (string.IsNullOrEmpty(gameNaam))
         {
             FeedbackText.text = "Vul een naam in voor de game.";
             return;
         }
 
+        // Start een coroutine om de game aan te maken
         StartCoroutine(CreateGameRequest(gameNaam));
     }
 
-    // Wordt aangeroepen door de knop "Toevoegen"
+    // Wordt aangeroepen bij het klikken op "Toevoegen"
     public void AddTrefwoord()
     {
-        if (gameID == -1)
+        if (gameID == -1) // Controleer of er een game is aangemaakt
         {
             FeedbackText.text = "Maak eerst een game aan voordat je trefwoorden kunt toevoegen.";
             return;
         }
 
-        string trefwoord = TrefwoordInput.text.Trim();
-        string betekenis = BetekenisInput.text.Trim();
+        string trefwoord = TrefwoordInput.text.Trim(); // Haal het trefwoord op
+        string betekenis = BetekenisInput.text.Trim(); // Haal de betekenis op
 
         if (string.IsNullOrEmpty(trefwoord) || string.IsNullOrEmpty(betekenis))
         {
@@ -117,9 +122,11 @@ public class AddGameManager : MonoBehaviour
             return;
         }
 
+        // Start een coroutine om het trefwoord toe te voegen
         StartCoroutine(AddTrefwoordRequest(gameID, trefwoord, betekenis));
     }
 
+    // Coroutine om een nieuwe game aan te maken
     private IEnumerator CreateGameRequest(string gameNaam)
     {
         WWWForm form = new WWWForm();
@@ -135,6 +142,7 @@ public class AddGameManager : MonoBehaviour
         }
         else
         {
+            // Verwerk de respons
             string result = www.downloadHandler.text;
             CreateGameResponse response = JsonUtility.FromJson<CreateGameResponse>(result);
 
@@ -142,7 +150,7 @@ public class AddGameManager : MonoBehaviour
             {
                 FeedbackText.text = "Game succesvol aangemaakt!";
                 gameName = gameNaam;
-                gameID = response.gameID; // Haal de gameID op voor verdere trefwoorden
+                gameID = response.gameID; // Sla de gameID op voor trefwoorden
             }
             else
             {
@@ -151,6 +159,7 @@ public class AddGameManager : MonoBehaviour
         }
     }
 
+    // Coroutine om een trefwoord toe te voegen aan de game
     private IEnumerator AddTrefwoordRequest(int gameID, string trefwoord, string betekenis)
     {
         WWWForm form = new WWWForm();
@@ -168,6 +177,7 @@ public class AddGameManager : MonoBehaviour
         }
         else
         {
+            // Verwerk de respons
             string result = www.downloadHandler.text;
             GenericResponse response = JsonUtility.FromJson<GenericResponse>(result);
 
@@ -187,6 +197,7 @@ public class AddGameManager : MonoBehaviour
         }
     }
 
+    // Voeg het trefwoord toe aan de UI-lijst
     void AddToTrefwoordenLijst(string trefwoord, string betekenis)
     {
         GameObject newItem = Instantiate(TrefwoordPrefab, TrefwoordenLijstContent);
@@ -198,11 +209,13 @@ public class AddGameManager : MonoBehaviour
         }
     }
 
-
+    // Wordt aangeroepen om naar het dashboard te gaan
     public void FinishAndGoToDashboard()
     {
         SceneManager.LoadScene("DashboardTeachers");
     }
+
+    // Klassen voor het verwerken van API-responses
     [System.Serializable]
     public class ResponseData
     {
