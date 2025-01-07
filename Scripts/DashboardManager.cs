@@ -12,7 +12,7 @@ public class DashboardManager : MonoBehaviour
     // API URLs
     private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
     private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
-    private string deleteGameUrl = "http://localhost/codenamesAPI/DeleteGame.php"; 
+    private string deleteGameUrl = "http://localhost/codenamesAPI/DeleteGame.php";
 
     // UI elements for the table
     public Transform tableContent; // Assign the table content container in the Inspector
@@ -94,10 +94,7 @@ public class DashboardManager : MonoBehaviour
                 string jsonResult = www.downloadHandler.text;
                 Debug.Log("Games Data: " + jsonResult);
 
-                // Parse the JSON data into a list of games
                 List<Game> games = JsonUtility.FromJson<GamesResponse>("{\"games\":" + jsonResult + "}").games;
-
-                // Populate the Unity UI table with the data
                 PopulateTable(games);
             }
             catch (System.Exception ex)
@@ -109,7 +106,6 @@ public class DashboardManager : MonoBehaviour
 
     void PopulateTable(List<Game> games)
     {
-        // Clear existing rows
         foreach (Transform child in tableContent)
         {
             Destroy(child.gameObject);
@@ -120,47 +116,47 @@ public class DashboardManager : MonoBehaviour
             GameObject row = Instantiate(tableRowPrefab, tableContent);
 
             TextMeshProUGUI[] columns = row.GetComponentsInChildren<TextMeshProUGUI>();
-            columns[0].text = game.GameID.ToString();  // First column: GameID
-            columns[1].text = game.Gamenaam;          // Second column: Gamenaam
-            columns[2].text = FormatKeywords(game.Trefwoorden); // Third column: Trefwoorden
+            columns[0].text = game.GameID.ToString();  // Eerste kolom: GameID
+            columns[1].text = game.Gamenaam;          // Tweede kolom: Gamenaam
+            columns[2].text = FormatKeywords(game.Trefwoorden); // Derde kolom: Trefwoorden
 
-            // Find the button in the prefab and set its action
+            // Verwijderen knop
             Button deleteButton = row.GetComponentInChildren<Button>();
             deleteButton.onClick.AddListener(() => DeleteGame(game.GameID));
+
+            // Aanpassen knop toevoegen
+            Button editButton = row.transform.Find("Aanpassen").GetComponent<Button>();
+            editButton.onClick.AddListener(() => EditGame(game.GameID, game.Gamenaam, game.Trefwoorden));
         }
     }
 
 
     string FormatKeywords(List<string> keywords)
     {
-        // Join keywords with a line break and add padding for clarity
         return string.Join("\n", keywords);
     }
 
 
     public void DeleteGame(int gameID)
     {
+        Debug.Log("Sending Game ID: " + gameID);
         StartCoroutine(DeleteGameCoroutine(gameID));
     }
 
     IEnumerator DeleteGameCoroutine(int gameId)
     {
-        // Debug: Log dat we proberen te verwijderen
-        Debug.Log($"Proberen om game met ID {gameId} te verwijderen...");
-
-        // Controleer of er een geldige gameId is
         if (gameId <= 0)
         {
-            Debug.LogError("Ongeldige game ID.");
+            Debug.LogError("Invalid game ID: " + gameId);
             yield break;
         }
 
-        // Log de GameID voor debugging
-        Debug.Log($"Sending Game ID: {gameId}");
+        Debug.Log("Preparing to send Game ID: " + gameId);
 
-        // Maak een POST-verzoek naar de PHP-server
+        string json = "{\"id\":" + gameId + "}";
+        Debug.Log("JSON Being Sent: " + json);
+
         UnityWebRequest www = new UnityWebRequest(deleteGameUrl, "POST");
-        string json = JsonUtility.ToJson(new { id = gameId }); // Zorg ervoor dat je de juiste id gebruikt
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -171,15 +167,49 @@ public class DashboardManager : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            // Log foutmelding als verbinding niet lukt
-            Debug.LogError("Fout bij het verbinden met de server: " + www.error);
+            Debug.LogError("Server connection error: " + www.error);
         }
         else
         {
-            Debug.Log("Serverantwoord: " + www.downloadHandler.text);
-            // Verwerk het antwoord van de server
+            string serverResponse = www.downloadHandler.text;
+            Debug.Log("Serverantwoord: " + serverResponse);
+
+            try
+            {
+                var response = JsonUtility.FromJson<ResponseData>(serverResponse);
+                Debug.Log("Server Response Status: " + response.status);
+                Debug.Log("Server Response Message: " + response.message);
+
+                if (response.status == "success")
+                {
+                    Debug.Log("Game succesvol verwijderd.");
+                    // Tabel opnieuw inladen na succesvolle verwijdering
+                    StartCoroutine(FetchGamesData());
+                }
+                else
+                {
+                    Debug.LogError("Game kon niet worden verwijderd: " + response.message);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Error parsing server response: " + ex.Message);
+            }
         }
     }
+    public void EditGame(int gameID, string gamenaam, List<string> trefwoorden)
+    {
+        // Bewaar de gegevens in PlayerPrefs om door te geven aan de nieuwe scene
+        PlayerPrefs.SetInt("EditGameID", gameID);
+        PlayerPrefs.SetString("EditGameName", gamenaam);
+        PlayerPrefs.SetString("EditGameKeywords", string.Join(",", trefwoorden));
+        PlayerPrefs.Save();
+
+        // Navigeer naar de EditGame-scene
+        SceneManager.LoadScene("EditGame");
+    }
+
+
 
 
 
@@ -196,7 +226,6 @@ public class DashboardManager : MonoBehaviour
         SceneManager.LoadScene("AddGame");
     }
 
-    // Classes for JSON parsing
     [System.Serializable]
     public class ResponseData
     {
