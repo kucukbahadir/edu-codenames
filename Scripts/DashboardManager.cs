@@ -198,9 +198,10 @@ public class DashboardManager : MonoBehaviour
     {
         // Bewaar de gegevens in PlayerPrefs om door te geven aan de nieuwe scene
         PlayerPrefs.SetInt("EditGameID", gameID);
-        PlayerPrefs.SetString("EditGameName", gamenaam);
-        PlayerPrefs.SetString("EditGameKeywords", string.Join(",", trefwoorden));
         PlayerPrefs.Save();
+
+        Debug.Log("Game ID opgeslagen in PlayerPrefs: " + gameID);
+
 
         // Navigeer naar de EditGame-scene
         SceneManager.LoadScene("EditGame");
