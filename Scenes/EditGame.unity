@@ -808,7 +808,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 311697335}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999964
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -997,6 +997,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 209647739}
     m_Modifications:
+    - target: {fileID: 4594996061395646943, guid: 010e84a73d965854c80939d6882e909a, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1487930885}
+    - target: {fileID: 4594996061395646943, guid: 010e84a73d965854c80939d6882e909a, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ChangeToDashboardTeachers
+      objectReference: {fileID: 0}
+    - target: {fileID: 4594996061395646943, guid: 010e84a73d965854c80939d6882e909a, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: EditGameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5270724258635267314, guid: 010e84a73d965854c80939d6882e909a, type: 3}
+      propertyPath: m_text
+      value: Afronden
+      objectReference: {fileID: 0}
     - target: {fileID: 7927171918008528699, guid: 010e84a73d965854c80939d6882e909a, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1079,7 +1095,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8955590991901073369, guid: 010e84a73d965854c80939d6882e909a, type: 3}
       propertyPath: m_Name
-      value: SaveChangesButton
+      value: Afronden
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2167,7 +2183,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00048245417}
+  m_AnchoredPosition: {x: 0, y: -0.00003605975}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2049308327
