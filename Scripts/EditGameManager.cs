@@ -147,6 +147,13 @@ public class EditGameManager : MonoBehaviour
                 // Set the game name in the input field
                 nameInputField.text = gameDetails.gamenaam;
 
+                // Verwijder bestaande trefwoorden in de UI
+                foreach (Transform child in keywordContainer)
+                {
+                    Destroy(child.gameObject);
+                }
+
+                // Voeg de nieuwe trefwoorden toe aan de UI
                 foreach (Keyword trefwoord in gameDetails.trefwoorden)
                 {
                     Debug.Log($"Keyword: {trefwoord.Trefwoord}, Meaning: {trefwoord.Betekenis}, ID: {trefwoord.TrefwoordID}");
@@ -228,6 +235,9 @@ public class EditGameManager : MonoBehaviour
         if (www.result == UnityWebRequest.Result.Success)
         {
             Debug.Log("Keyword updated successfully: " + www.downloadHandler.text);
+
+            // Na een succesvolle update, haal opnieuw de gamegegevens op om de trefwoordenlijst bij te werken
+            StartCoroutine(GetGameDetails(gameID));
         }
         else
         {
