@@ -1,7 +1,8 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Networking;
 
@@ -11,9 +12,12 @@ public class EditGameManager : MonoBehaviour
     public Transform keywordContainer; // Container voor keywords en betekenissen
     public GameObject keywordPrefab; // Prefab voor een keyword-betekenis pair
     public Button saveGameNameButton; // Knop voor gamenaam opslaan
+    public TextMeshProUGUI feedbackText; // Feedback voor de gebruiker
 
     private int gameID; // ID van de game
     private string getGameUrl = "http://localhost/codenamesAPI/GetGameDetails.php"; // Nieuwe URL om gegevens op te halen
+    private string updateKeywordUrl = "http://localhost/codenamesAPI/UpdateKeyword.php"; // URL for updating keywords
+    private string updateGameNameUrl = "http://localhost/codenamesAPI/UpdateGame.php"; // URL for updating game name
 
     void Start()
     {
@@ -27,10 +31,81 @@ public class EditGameManager : MonoBehaviour
         StartCoroutine(GetGameDetails(gameID));
     }
 
-    [System.Serializable]
-    public class GameIDRequest
+    public void ChangeToDashboardTeachers()
     {
-        public int id;
+        Debug.Log("Changing scene to DashboardTeachers");
+        SceneManager.LoadScene("DashboardTeachers");
+    }
+
+    public void SaveGameName()
+    {
+        Debug.Log("GameID:" + gameID);
+        string gameNaam = nameInputField.text.Trim(); // Haal de naam op uit het invoerveld
+
+        if (string.IsNullOrEmpty(gameNaam))
+        {
+            feedbackText.text = "De gamenaam mag niet leeg zijn.";
+            Debug.LogError("De gamenaam is leeg.");
+            return;
+        }
+
+        if (gameNaam.Length > 20) // Controleer of de gamenaam ≤ 20 tekens is
+        {
+            feedbackText.text = "De gamenaam mag maximaal 20 tekens bevatten.";
+            Debug.LogError("De gamenaam mag maximaal 20 tekens bevatten.");
+            return;
+        }
+
+        // Debug: Controleer of feedbackText goed is toegewezen
+        if (feedbackText == null)
+        {
+            Debug.LogError("feedbackText is niet toegewezen in de Inspector.");
+            return;
+        }
+
+        // Start de coroutine om de gamenaam op te slaan
+        StartCoroutine(UpdateGameName(gameID, gameNaam));
+    }
+
+    private IEnumerator UpdateGameName(int gameID, string gameNaam)
+    {
+        // Maak JSON data
+        UpdateGameNameRequest requestData = new UpdateGameNameRequest { id = gameID, name = gameNaam };
+        string json = JsonUtility.ToJson(requestData);
+
+        Debug.Log("Verstuurde JSON: " + json);
+
+        UnityWebRequest www = new UnityWebRequest(updateGameNameUrl, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
+
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            string result = www.downloadHandler.text;
+            Debug.Log("Respons van de server: " + result);
+
+            // Verwerk de respons
+            UpdateGameResponse response = JsonUtility.FromJson<UpdateGameResponse>(result);
+            if (response.status == "success")
+            {
+                feedbackText.text = "Gamenaam succesvol bijgewerkt!";
+                Debug.Log("Gamenaam succesvol bijgewerkt.");
+            }
+            else
+            {
+                feedbackText.text = "Fout: " + response.message;
+                Debug.LogError("Fout bij updaten gamenaam: " + response.message);
+            }
+        }
+        else
+        {
+            feedbackText.text = "Fout bij het verbinden met de server.";
+            Debug.LogError("Serverfout: " + www.error);
+        }
     }
 
     IEnumerator GetGameDetails(int gameID)
@@ -74,9 +149,10 @@ public class EditGameManager : MonoBehaviour
 
                 foreach (Keyword trefwoord in gameDetails.trefwoorden)
                 {
-                    Debug.Log("Keyword: " + trefwoord.Trefwoord + ", Meaning: " + trefwoord.Betekenis); // Log each keyword and meaning
-                    AddKeywordField(trefwoord.Trefwoord, trefwoord.Betekenis);
+                    Debug.Log($"Keyword: {trefwoord.Trefwoord}, Meaning: {trefwoord.Betekenis}, ID: {trefwoord.TrefwoordID}");
+                    AddKeywordField(trefwoord.TrefwoordID, trefwoord.Trefwoord, trefwoord.Betekenis);
                 }
+
             }
             else
             {
@@ -89,22 +165,27 @@ public class EditGameManager : MonoBehaviour
         }
     }
 
-
-    void AddKeywordField(string keyword, string betekenis)
+    void AddKeywordField(int trefwoordID, string keyword, string betekenis)
     {
-        // Debugging: log the values being passed
-        Debug.Log("Setting keyword: " + keyword + ", meaning: " + betekenis);
-
-        // Create a new keyword and meaning field
         GameObject newField = Instantiate(keywordPrefab, keywordContainer);
         TMP_InputField[] inputs = newField.GetComponentsInChildren<TMP_InputField>();
 
-        // Check if we have the correct number of input fields in the prefab
         if (inputs.Length == 2)
         {
-            // Set the text for the keyword and meaning
             inputs[0].text = keyword; // Trefwoord
             inputs[1].text = betekenis; // Betekenis
+
+            Button updateButton = newField.GetComponentInChildren<Button>();
+            if (updateButton != null)
+            {
+                updateButton.onClick.AddListener(() =>
+                {
+                    string updatedKeyword = inputs[0].text;
+                    string updatedBetekenis = inputs[1].text;
+                    Debug.Log($"Updating field. ID: {trefwoordID}, Updated Keyword: {updatedKeyword}, Updated Meaning: {updatedBetekenis}");
+                    StartCoroutine(SendUpdatedKeyword(trefwoordID, updatedKeyword, updatedBetekenis));
+                });
+            }
         }
         else
         {
@@ -112,6 +193,53 @@ public class EditGameManager : MonoBehaviour
         }
     }
 
+    IEnumerator SendUpdatedKeyword(int trefwoordID, string keyword, string meaning)
+    {
+        Debug.Log($"Preparing to send update. TrefwoordID: {trefwoordID}, Keyword: {keyword}, Meaning: {meaning}");
+
+        if (gameID <= 0 || trefwoordID <= 0)
+        {
+            Debug.LogError("Invalid gameID or TrefwoordID");
+            yield break;
+        }
+
+        // Create the update request object
+        UpdateKeywordRequest updateData = new UpdateKeywordRequest
+        {
+            id = gameID,
+            trefwoordID = trefwoordID,
+            keyword = keyword,
+            betekenis = meaning
+        };
+
+        // Serialize the data into JSON
+        string json = JsonUtility.ToJson(updateData);
+
+        Debug.Log("Sending JSON: " + json); // Log the JSON being sent
+
+        UnityWebRequest www = new UnityWebRequest(updateKeywordUrl, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
+
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("Keyword updated successfully: " + www.downloadHandler.text);
+        }
+        else
+        {
+            Debug.LogError("Failed to update keyword: " + www.error);
+        }
+    }
+
+    [System.Serializable]
+    public class GameIDRequest
+    {
+        public int id;
+    }
 
     [System.Serializable]
     public class GameDetails
@@ -123,8 +251,31 @@ public class EditGameManager : MonoBehaviour
     [System.Serializable]
     public class Keyword
     {
+        public int TrefwoordID;  // ID for the keyword
         public string Trefwoord;  // Keyword
         public string Betekenis;  // Meaning
     }
 
+    [System.Serializable]
+    public class UpdateGameNameRequest
+    {
+        public int id;
+        public string name;
+    }
+
+    [System.Serializable]
+    public class UpdateGameResponse
+    {
+        public string status;
+        public string message;
+    }
+
+    [System.Serializable]
+    public class UpdateKeywordRequest
+    {
+        public int id; // Game ID
+        public int trefwoordID; // Trefwoord ID
+        public string keyword; // Keyword
+        public string betekenis; // Meaning
+    }
 }
