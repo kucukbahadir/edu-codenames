@@ -117,7 +117,6 @@ public class DashboardManager : MonoBehaviour
             TextMeshProUGUI[] columns = row.GetComponentsInChildren<TextMeshProUGUI>();
             columns[0].text = game.GameID.ToString();  // Eerste kolom: GameID
             columns[1].text = game.Gamenaam;          // Tweede kolom: Gamenaam
-            columns[2].text = FormatKeywords(game.Trefwoorden); // Derde kolom: Trefwoorden
 
             // Verwijderen knop
             Button deleteButton = row.GetComponentInChildren<Button>();
@@ -127,12 +126,6 @@ public class DashboardManager : MonoBehaviour
             Button editButton = row.transform.Find("Aanpassen").GetComponent<Button>();
             editButton.onClick.AddListener(() => EditGame(game.GameID, game.Gamenaam, game.Trefwoorden));
         }
-    }
-
-
-    string FormatKeywords(List<string> keywords)
-    {
-        return string.Join("\n", keywords);
     }
 
     public void DeleteGame(int gameID)

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class NewKeywordManager : MonoBehaviour
 {
@@ -78,9 +79,8 @@ public class NewKeywordManager : MonoBehaviour
             Debug.Log("Nieuw trefwoord succesvol toegevoegd: " + www.downloadHandler.text);
             feedbackText.text = "Trefwoord succesvol toegevoegd.";
 
-            // Velden leegmaken na succesvol toevoegen
-            keywordInputField.text = "";
-            meaningInputField.text = "";
+            // Herlaad de huidige scène
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         else
         {
@@ -88,6 +88,8 @@ public class NewKeywordManager : MonoBehaviour
             feedbackText.text = "Fout bij het toevoegen van trefwoord.";
         }
     }
+
+
 
     [System.Serializable]
     public class AddKeywordRequest

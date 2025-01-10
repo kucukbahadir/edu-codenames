@@ -236,8 +236,8 @@ public class EditGameManager : MonoBehaviour
         {
             Debug.Log("Keyword updated successfully: " + www.downloadHandler.text);
 
-            // Na een succesvolle update, haal opnieuw de gamegegevens op om de trefwoordenlijst bij te werken
-            StartCoroutine(GetGameDetails(gameID));
+            // Na een succesvolle update, laad de huidige scène opnieuw
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         else
         {
