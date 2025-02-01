@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class EditGameManager : MonoBehaviour
 {
@@ -29,6 +30,10 @@ public class EditGameManager : MonoBehaviour
 
         // Start de coroutine om de gamegegevens op te halen
         StartCoroutine(GetGameDetails(gameID));
+    }
+    public void ChangeToDashboardTeachers()
+    {
+        SceneManager.LoadScene("DashboardTeachers");
     }
 
     public void ChangeToDashboardTeachers()
@@ -200,6 +205,57 @@ public class EditGameManager : MonoBehaviour
         }
     }
 
+    public void UpdateKeyword(int trefwoordID, string updatedKeyword, string updatedBetekenis)
+    {
+        Debug.Log($"Updating keyword: {updatedKeyword}, meaning: {updatedBetekenis}");
+
+        // Start coroutine to send the updated data to the server
+        StartCoroutine(SendUpdatedKeyword(trefwoordID, updatedKeyword, updatedBetekenis));
+
+    }
+
+    IEnumerator SendUpdatedKeyword(int trefwoordID, string keyword, string meaning)
+    {
+        Debug.Log($"Preparing to send update. TrefwoordID: {trefwoordID}, Keyword: {keyword}, Meaning: {meaning}");
+
+        if (gameID <= 0 || trefwoordID <= 0)
+        {
+            Debug.LogError("Invalid gameID or TrefwoordID");
+            yield break;
+        }
+
+        // Create the update request object
+        UpdateKeywordRequest updateData = new UpdateKeywordRequest
+        {
+            id = gameID,
+            trefwoordID = trefwoordID,
+            keyword = keyword,
+            betekenis = meaning
+        };
+
+        // Serialize the data into JSON
+        string json = JsonUtility.ToJson(updateData);
+
+        Debug.Log("Sending JSON: " + json); // Log the JSON being sent
+
+        UnityWebRequest www = new UnityWebRequest(updateKeywordUrl, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
+
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("Keyword updated successfully: " + www.downloadHandler.text);
+        }
+        else
+        {
+            Debug.LogError("Failed to update keyword: " + www.error);
+        }
+    }
+
     IEnumerator SendUpdatedKeyword(int trefwoordID, string keyword, string meaning)
     {
         Debug.Log($"Preparing to send update. TrefwoordID: {trefwoordID}, Keyword: {keyword}, Meaning: {meaning}");
@@ -251,6 +307,8 @@ public class EditGameManager : MonoBehaviour
         public int id;
     }
 
+
+
     [System.Serializable]
     public class GameDetails
     {
@@ -264,6 +322,14 @@ public class EditGameManager : MonoBehaviour
         public int TrefwoordID;  // ID for the keyword
         public string Trefwoord;  // Keyword
         public string Betekenis;  // Meaning
+    }
+    [System.Serializable]
+    public class UpdateKeywordRequest
+    {
+        public int id; // Game ID
+        public int trefwoordID; // Trefwoord ID
+        public string keyword; // Keyword
+        public string betekenis; // Meaning
     }
 
     [System.Serializable]
