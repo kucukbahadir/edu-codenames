@@ -8,6 +8,8 @@ using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
+    private string apiKey = "06e49cf4e293d0f530a00386d6882e07d599eac1fac4a585881fe9d749a106a2";
+
     // API URLs
     private string checkAccessUrl = "http://localhost/codenamesAPI/CheckAccess.php";
     private string fetchGamesUrl = "http://localhost/codenamesAPI/GetGamesData.php";
@@ -41,6 +43,8 @@ public class DashboardManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
@@ -80,6 +84,7 @@ public class DashboardManager : MonoBehaviour
     IEnumerator FetchGamesData()
     {
         UnityWebRequest www = UnityWebRequest.Get(fetchGamesUrl);
+        www.SetRequestHeader("Authorization", apiKey);
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
@@ -152,6 +157,8 @@ public class DashboardManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 

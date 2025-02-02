@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 public class EditGameManager : MonoBehaviour
 {
@@ -14,11 +13,14 @@ public class EditGameManager : MonoBehaviour
     public GameObject keywordPrefab; // Prefab voor een keyword-betekenis pair
     public Button saveGameNameButton; // Knop voor gamenaam opslaan
     public TextMeshProUGUI feedbackText; // Feedback voor de gebruiker
+    private string apiKey = "06e49cf4e293d0f530a00386d6882e07d599eac1fac4a585881fe9d749a106a2";
+
 
     private int gameID; // ID van de game
     private string getGameUrl = "http://localhost/codenamesAPI/GetGameDetails.php"; // Nieuwe URL om gegevens op te halen
     private string updateKeywordUrl = "http://localhost/codenamesAPI/UpdateKeyword.php"; // URL for updating keywords
     private string updateGameNameUrl = "http://localhost/codenamesAPI/UpdateGame.php"; // URL for updating game name
+
 
     void Start()
     {
@@ -33,12 +35,6 @@ public class EditGameManager : MonoBehaviour
     }
     public void ChangeToDashboardTeachers()
     {
-        SceneManager.LoadScene("DashboardTeachers");
-    }
-
-    public void ChangeToDashboardTeachers()
-    {
-        Debug.Log("Changing scene to DashboardTeachers");
         SceneManager.LoadScene("DashboardTeachers");
     }
 
@@ -74,7 +70,6 @@ public class EditGameManager : MonoBehaviour
 
     private IEnumerator UpdateGameName(int gameID, string gameNaam)
     {
-        // Maak JSON data
         UpdateGameNameRequest requestData = new UpdateGameNameRequest { id = gameID, name = gameNaam };
         string json = JsonUtility.ToJson(requestData);
 
@@ -85,6 +80,7 @@ public class EditGameManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
@@ -93,7 +89,6 @@ public class EditGameManager : MonoBehaviour
             string result = www.downloadHandler.text;
             Debug.Log("Respons van de server: " + result);
 
-            // Verwerk de respons
             UpdateGameResponse response = JsonUtility.FromJson<UpdateGameResponse>(result);
             if (response.status == "success")
             {
@@ -115,56 +110,49 @@ public class EditGameManager : MonoBehaviour
 
     IEnumerator GetGameDetails(int gameID)
     {
-        // Check if gameID is valid
         if (gameID == 0)
         {
             Debug.LogError("Invalid gameID: " + gameID);
             yield break;
         }
 
-        // Create the request object
-        GameIDRequest request = new GameIDRequest();
-        request.id = gameID;
-
-        // Serialize it to JSON
+        GameIDRequest request = new GameIDRequest { id = gameID };
         string json = JsonUtility.ToJson(request);
-        Debug.Log("Sending JSON: " + json);  // Log the JSON being sent
+
+        Debug.Log("Sending JSON: " + json);
 
         UnityWebRequest www = new UnityWebRequest(getGameUrl, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
         if (www.result == UnityWebRequest.Result.Success)
         {
             Debug.Log("Response: " + www.downloadHandler.text);
-            string response = www.downloadHandler.text;
-            GameDetails gameDetails = JsonUtility.FromJson<GameDetails>(response);
+            GameDetails gameDetails = JsonUtility.FromJson<GameDetails>(www.downloadHandler.text);
 
             if (gameDetails != null)
             {
-                Debug.Log("Game name: " + gameDetails.gamenaam);
-                Debug.Log("Number of keywords: " + gameDetails.trefwoorden.Count);
-
-                // Set the game name in the input field
                 nameInputField.text = gameDetails.gamenaam;
 
-                // Verwijder bestaande trefwoorden in de UI
-                foreach (Transform child in keywordContainer)
+                // Debug: Check if keywords exist
+                if (gameDetails.trefwoorden == null || gameDetails.trefwoorden.Count == 0)
                 {
-                    Destroy(child.gameObject);
+                    Debug.LogWarning("No keywords received from the server.");
                 }
-
-                // Voeg de nieuwe trefwoorden toe aan de UI
-                foreach (Keyword trefwoord in gameDetails.trefwoorden)
+                else
                 {
-                    Debug.Log($"Keyword: {trefwoord.Trefwoord}, Meaning: {trefwoord.Betekenis}, ID: {trefwoord.TrefwoordID}");
-                    AddKeywordField(trefwoord.TrefwoordID, trefwoord.Trefwoord, trefwoord.Betekenis);
+                    Debug.Log("Number of keywords received: " + gameDetails.trefwoorden.Count);
+                    foreach (var keyword in gameDetails.trefwoorden)
+                    {
+                        Debug.Log($"Keyword: {keyword.Trefwoord}, Meaning: {keyword.Betekenis}");
+                        AddKeywordField(keyword.TrefwoordID, keyword.Trefwoord, keyword.Betekenis);
+                    }
                 }
-
             }
             else
             {
@@ -176,6 +164,8 @@ public class EditGameManager : MonoBehaviour
             Debug.LogError("Error fetching the game: " + www.error);
         }
     }
+
+
 
     void AddKeywordField(int trefwoordID, string keyword, string betekenis)
     {
@@ -242,49 +232,10 @@ public class EditGameManager : MonoBehaviour
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
+
         www.SetRequestHeader("Content-Type", "application/json");
 
-        yield return www.SendWebRequest();
-
-        if (www.result == UnityWebRequest.Result.Success)
-        {
-            Debug.Log("Keyword updated successfully: " + www.downloadHandler.text);
-        }
-        else
-        {
-            Debug.LogError("Failed to update keyword: " + www.error);
-        }
-    }
-
-    IEnumerator SendUpdatedKeyword(int trefwoordID, string keyword, string meaning)
-    {
-        Debug.Log($"Preparing to send update. TrefwoordID: {trefwoordID}, Keyword: {keyword}, Meaning: {meaning}");
-
-        if (gameID <= 0 || trefwoordID <= 0)
-        {
-            Debug.LogError("Invalid gameID or TrefwoordID");
-            yield break;
-        }
-
-        // Create the update request object
-        UpdateKeywordRequest updateData = new UpdateKeywordRequest
-        {
-            id = gameID,
-            trefwoordID = trefwoordID,
-            keyword = keyword,
-            betekenis = meaning
-        };
-
-        // Serialize the data into JSON
-        string json = JsonUtility.ToJson(updateData);
-
-        Debug.Log("Sending JSON: " + json); // Log the JSON being sent
-
-        UnityWebRequest www = new UnityWebRequest(updateKeywordUrl, "POST");
-        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
-        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        www.downloadHandler = new DownloadHandlerBuffer();
-        www.SetRequestHeader("Content-Type", "application/json");
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
@@ -294,6 +245,7 @@ public class EditGameManager : MonoBehaviour
 
             // Na een succesvolle update, laad de huidige scène opnieuw
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
         }
         else
         {
@@ -301,13 +253,12 @@ public class EditGameManager : MonoBehaviour
         }
     }
 
+
     [System.Serializable]
     public class GameIDRequest
     {
         public int id;
     }
-
-
 
     [System.Serializable]
     public class GameDetails
@@ -344,14 +295,5 @@ public class EditGameManager : MonoBehaviour
     {
         public string status;
         public string message;
-    }
-
-    [System.Serializable]
-    public class UpdateKeywordRequest
-    {
-        public int id; // Game ID
-        public int trefwoordID; // Trefwoord ID
-        public string keyword; // Keyword
-        public string betekenis; // Meaning
     }
 }

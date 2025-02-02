@@ -11,6 +11,7 @@ public class NewKeywordManager : MonoBehaviour
     public TMP_InputField meaningInputField; // Input voor de betekenis
     public Button createButton; // Knop voor aanmaken
     public TextMeshProUGUI feedbackText; // Feedback voor de gebruiker
+    private string apiKey = "06e49cf4e293d0f530a00386d6882e07d599eac1fac4a585881fe9d749a106a2";
 
     private string addKeywordUrl = "http://localhost/codenamesAPI/AddKeyword.php"; // API voor het toevoegen van trefwoorden
     private int gameID; // Huidige GameID
@@ -71,6 +72,8 @@ public class NewKeywordManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 

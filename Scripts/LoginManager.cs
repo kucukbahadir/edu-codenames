@@ -6,22 +6,9 @@ using TMPro; // Required for TMP_InputField
 
 public class LoginManager : MonoBehaviour
 {
+    private string apiKey = "06e49cf4e293d0f530a00386d6882e07d599eac1fac4a585881fe9d749a106a2";
     private string apiUrl = "http://localhost/codenamesAPI/Login.php"; // PHP Login URL
 
-    [System.Serializable]
-    public class LoginData
-    {
-        public string email;
-        public string password;
-    }
-
-    [System.Serializable]
-    public class ResponseData
-    {
-        public string status;
-        public string message;
-        public string token; // Token for authentication
-    }
 
     public TMP_InputField emailInputField; // Assign this in the Inspector
     public TMP_InputField passwordInputField; // Assign this in the Inspector
@@ -37,7 +24,6 @@ public class LoginManager : MonoBehaviour
         StartCoroutine(Login(email, password)); // Start the coroutine for login
     }
 
-    // Coroutine that sends the login data to the server and handles the response
     IEnumerator Login(string email, string password)
     {
         LoginData loginData = new LoginData { email = email, password = password };
@@ -48,33 +34,52 @@ public class LoginManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
         {
             ShowErrorMessage("Er is een probleem met de verbinding. Probeer het later opnieuw.");
+            yield break; // Use yield break to exit the coroutine
         }
         else
         {
             string jsonResult = www.downloadHandler.text;
-            ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
 
-            if (response.status == "success")
+            // Check if the response starts with a JSON object
+            if (!jsonResult.StartsWith("{") && !jsonResult.StartsWith("["))
             {
-                // Save the session token after a successful login
-                sessionToken = response.token;
-                PlayerPrefs.SetString("SessionToken", sessionToken); // Save session token to PlayerPrefs
-                PlayerPrefs.Save();
-                SceneManager.LoadScene("DashboardTeachers"); // Load Teacher's Dashboard
+                ShowErrorMessage("Unexpected response from server. Received: " + jsonResult);
+                yield break;
             }
-            else
+
+            try
             {
-                ShowErrorMessage("Email en/of wachtwoord fout.");
-                ResetInputFields();
+                ResponseData response = JsonUtility.FromJson<ResponseData>(jsonResult);
+
+                if (response.status == "success")
+                {
+                    sessionToken = response.token;
+                    PlayerPrefs.SetString("SessionToken", sessionToken);
+                    PlayerPrefs.Save();
+                    SceneManager.LoadScene("DashboardTeachers");
+                }
+                else
+                {
+                    ShowErrorMessage("Email en/of wachtwoord fout.");
+                    ResetInputFields();
+                }
             }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("JSON Parsing error: " + ex.Message);
+                yield break;
+            }
+
         }
     }
+
 
     // Display the error message in the ErrorMSG text
     private void ShowErrorMessage(string message)
@@ -108,5 +113,18 @@ public class LoginManager : MonoBehaviour
         SceneManager.LoadScene("Login"); // Redirect to login screen
     }
 
+    [System.Serializable]
+    public class LoginData
+    {
+        public string email;
+        public string password;
+    }
 
+    [System.Serializable]
+    public class ResponseData
+    {
+        public string status;
+        public string message;
+        public string token; // Token for authentication
+    }
 }

@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class AddGameManager : MonoBehaviour
 {
+    private string apiKey = "06e49cf4e293d0f530a00386d6882e07d599eac1fac4a585881fe9d749a106a2";
     // Invoervelden voor game naam, trefwoorden en betekenis
     public TMP_InputField GameNaamInput;
     public TMP_InputField TrefwoordInput;
@@ -53,6 +54,8 @@ public class AddGameManager : MonoBehaviour
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
@@ -134,6 +137,8 @@ public class AddGameManager : MonoBehaviour
 
         UnityWebRequest www = UnityWebRequest.Post(apiUrlCreateGame, form);
 
+        www.SetRequestHeader("Authorization", apiKey);
+
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
@@ -168,6 +173,7 @@ public class AddGameManager : MonoBehaviour
         form.AddField("betekenis", betekenis);
 
         UnityWebRequest www = UnityWebRequest.Post(apiUrlAddTrefwoord, form);
+        www.SetRequestHeader("Authorization", apiKey);
 
         yield return www.SendWebRequest();
 
